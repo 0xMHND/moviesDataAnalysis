@@ -135,28 +135,36 @@ except IOError:
     sys.exit(1)
 
 sorted_ratings = sorted(ratings , key=lambda k: int(k['movieID'])) 
+
 temp_cnt = 0
 total_rating = 0
-temp_movie = "nn"
+temp_movie_id = "nn"
 weighted_movie_rate = {}
 w_movies_ratings = []
 for i in sorted_ratings:
-    if i['movieID'] != temp_movie and temp_cnt!=0:
-        weighted_movie_rate['id'] = temp_movie
+    if i['movieID'] == "91":
+        print(i)
+    if i['movieID'] != temp_movie_id and temp_cnt!=0:
+        weighted_movie_rate['id'] = temp_movie_id
         weighted_movie_rate['rating'] = total_rating/temp_cnt
         temp_cnt = 0
-        temp_movie = i['movieID']
+        temp_movie_id = i['movieID']
         total_rating = 0
         w_movies_ratings.append(weighted_movie_rate.copy())
     else:
-        temp_movie = i['movieID']
+        temp_movie_id = i['movieID']
         total_rating += int( i['rating'] )
         temp_cnt += 1
-    
 for i,w in enumerate(w_movies_ratings):
-    print("id[",i,"] : " ,w)
+    if (i+1) != int(w['id']):
+        weighted_movie_rate['id'] = str(i+1)
+        weighted_movie_rate['rating'] = 0
+        w_movies_ratings.insert(i, weighted_movie_rate)
+for i,w in enumerate(w_movies_ratings):
+    print("id[",i+1,"] : " ,w)
     if i == 1000:
         break
+
 '''''''''''''''''''''''''''
     plot + Configration
 
