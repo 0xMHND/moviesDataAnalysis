@@ -82,6 +82,12 @@ except IOError:
     print("Cannot open file")
     sys.exit(1)
 
+for i, val in enumerate(movies):
+    if (i+1) != int(val['m_id']):
+        movie['m_id'] = str(i+1)
+        movie['title'] = "NONE"
+        movie['genre'] = "NONE"
+        movies.insert(i, movie.copy())
 '''''''''''''''''''''''''''
    get movies' release year.
 
@@ -95,9 +101,6 @@ for i, val in enumerate(title):
 	
 min_yr = min(int(s) for s in movie_date)
 max_yr = max(int(s) for s in movie_date)
-print("minimum = ", min_yr)
-print("maximum = ", max_yr)
-
 
 '''''''''''''''''''''''''''
    count number of moveis/year 
@@ -142,34 +145,38 @@ temp_movie_id = "nn"
 weighted_movie_rate = {}
 w_movies_ratings = []
 for i in sorted_ratings:
-    if i['movieID'] == "91":
-        print(i)
-    if i['movieID'] != temp_movie_id and temp_cnt!=0:
+    if int(i['movieID']) != temp_movie_id and temp_cnt!=0:
         weighted_movie_rate['id'] = temp_movie_id
         weighted_movie_rate['rating'] = total_rating/temp_cnt
         temp_cnt = 0
         temp_movie_id = i['movieID']
         total_rating = 0
         w_movies_ratings.append(weighted_movie_rate.copy())
+#        print(weighted_movie_rate)
     else:
-        temp_movie_id = i['movieID']
+        temp_movie_id = int(i['movieID'])
         total_rating += int( i['rating'] )
         temp_cnt += 1
-for i,w in enumerate(w_movies_ratings):
+
+'''''''''''''''''''''''''''''''''''''''''
+Fill in the gaps of unrated movies.
+
+'''''''''''''''''''''''''''''''''''''''''
+for i, w in enumerate(w_movies_ratings):
     if (i+1) != int(w['id']):
         weighted_movie_rate['id'] = str(i+1)
-        weighted_movie_rate['rating'] = 0
-        w_movies_ratings.insert(i, weighted_movie_rate)
-for i,w in enumerate(w_movies_ratings):
-    print("id[",i+1,"] : " ,w)
-    if i == 1000:
-        break
+        weighted_movie_rate['rating'] = np.nan
+        w_movies_ratings.insert(i, weighted_movie_rate.copy())
+
+for i, w in enumerate(w_movies_ratings):
+    if w['rating'] == 5:
+        print("movie id ", w['id'])
+        print("title " + movies[w['id']]['title'])
 
 '''''''''''''''''''''''''''
     plot + Configration
 
 '''''''''''''''''''''''''''
-'''
 plt.subplot(221)
 x = np.arange(min_yr, max_yr+1, 1);
 y = movie_year_cnt
@@ -183,15 +190,8 @@ y = sci_per_age
 plt.bar(x, y)
 plt.title(" scientists age dist.")
 
-plt.subplot(223)
-
-'''
-#x = np.arange(0,3951, 1)
+plt.subplot(212)
 y = [m['rating'] for m in w_movies_ratings]
-'''
-for i, val in enumerate(y):
-    print("id[",i,"] : " ,val)
-    '''
 x = range(len(y))
 plt.plot(x, y, "ro")
 plt.title("movies' ratings")
