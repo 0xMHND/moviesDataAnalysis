@@ -2,11 +2,21 @@ IN_FILF_MOVIES = "movies.dat"
 IN_FILE_USERS = "users.dat"
 IN_FILE_RATINGS = "ratings.dat"
 
+RATING_LIMIT    = 4.7 #out of 5
+NUM_RATINGS     = 2 
+AGE_GROUP1      = "1"
+AGE_GROUP18     = "18"
+AGE_GROUP25     = "25"
+AGE_GROUP35     = "35"
+AGE_GROUP45     = "45"
+AGE_GROUP50     = "50"
+AGE_GROUP56     = "56"
 
 import sys
 import numpy as np
 import re #regexp
 import matplotlib.pyplot as plt
+
 
 title = []
 scientist = []
@@ -47,8 +57,6 @@ for i, usr in enumerate(sci_users):
 
 min_sci_age = min(int(s['age']) for s in sci_users)
 max_sci_age = max(int(s['age']) for s in sci_users)
-print("males ", male_cnt, "females ", female_cnt)
-print("max age ", max_sci_age, "min age ", min_sci_age)
 
 sci_per_age = [0]*(max_sci_age-min_sci_age + 1)
 cnt = 0 
@@ -88,6 +96,7 @@ for i, val in enumerate(movies):
         movie['title'] = "NONE"
         movie['genre'] = "NONE"
         movies.insert(i, movie.copy())
+
 '''''''''''''''''''''''''''
    get movies' release year.
 
@@ -103,7 +112,7 @@ min_yr = min(int(s) for s in movie_date)
 max_yr = max(int(s) for s in movie_date)
 
 '''''''''''''''''''''''''''
-   count number of moveis/year 
+   count number of movies/year 
 
 '''''''''''''''''''''''''''
 movie_year_cnt = [0]*(max_yr-min_yr + 1)
@@ -126,6 +135,7 @@ for i, val in enumerate(movie_date):
 '''''''''''''''''''''''''''
 movie_rated = {}
 ratings = []
+sci_ratings = []
 try:
     with open(IN_FILE_RATINGS) as f:
         for line in f:
@@ -133,11 +143,14 @@ try:
             line_sp = line.split("::")
             movie_rated['u_id'], movie_rated['movieID'], movie_rated['rating'], movie_rated['timestamp'] = line_sp
             ratings.append(movie_rated.copy())
+            for u in sci_users:
+                if (movie_rated['u_id'] == u['id']) and (u['age']==AGE_GROUP56) and (u['gender']=='M'): 
+                    sci_ratings.append(movie_rated.copy())
 except IOError:
     print("Cannot open file")
     sys.exit(1)
 
-sorted_ratings = sorted(ratings , key=lambda k: int(k['movieID'])) 
+sorted_ratings = sorted(sci_ratings , key=lambda k: int(k['movieID'])) 
 
 temp_cnt = 0
 total_rating = 0
@@ -146,13 +159,13 @@ weighted_movie_rate = {}
 w_movies_ratings = []
 for i in sorted_ratings:
     if int(i['movieID']) != temp_movie_id and temp_cnt!=0:
-        weighted_movie_rate['id'] = temp_movie_id
-        weighted_movie_rate['rating'] = total_rating/temp_cnt
-        temp_cnt = 0
-        temp_movie_id = i['movieID']
+        if temp_cnt>NUM_RATINGS:  #MORE THAN 4 VOTES
+            weighted_movie_rate['id'] = temp_movie_id
+            weighted_movie_rate['rating'] = total_rating/temp_cnt
+            temp_movie_id = i['movieID']
+            w_movies_ratings.append(weighted_movie_rate.copy())
         total_rating = 0
-        w_movies_ratings.append(weighted_movie_rate.copy())
-#        print(weighted_movie_rate)
+        temp_cnt = 0
     else:
         temp_movie_id = int(i['movieID'])
         total_rating += int( i['rating'] )
@@ -164,15 +177,17 @@ Fill in the gaps of unrated movies.
 '''''''''''''''''''''''''''''''''''''''''
 for i, w in enumerate(w_movies_ratings):
     if (i+1) != int(w['id']):
-        weighted_movie_rate['id'] = str(i+1)
+        weighted_movie_rate['id'] = (i+1)
         weighted_movie_rate['rating'] = np.nan
         w_movies_ratings.insert(i, weighted_movie_rate.copy())
 
-for i, w in enumerate(w_movies_ratings):
-    if w['rating'] == 5:
-        print("movie id ", w['id'])
-        print("title " + movies[w['id']]['title'])
 
+print("++++++++++++++++++ best movies* +++++++++++++++++++")
+for i, w in enumerate(w_movies_ratings):
+    if w['rating'] > RATING_LIMIT:
+        print( movies[w['id']]['title'])
+
+print("\n*more than {2} rated above {0} by Group (Scientist) Age {1}+ (male)".format(RATING_LIMIT, AGE_GROUP56,  NUM_RATINGS) )
 '''''''''''''''''''''''''''
     plot + Configration
 
